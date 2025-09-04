@@ -1,0 +1,28 @@
+# Ignore git + metadata
+.git
+.gitignore
+.gitattributes
+
+# Ignore logs + cache
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.tmp
+*.bak
+.DS_Store
+
+# Ignore build artifacts
+/dist
+/build
+*.egg-info
+
+# Ignore local data
+/workspace/*
+!/workspace/a1111-data/README.md
+
+# Ignore notebooks (optional, uncomment if you don’t want them baked in)
+/*.ipynb
