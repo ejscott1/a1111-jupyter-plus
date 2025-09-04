@@ -10,18 +10,14 @@ export LORA_URLS="${LORA_URLS:-}"
 export VAE_URLS="${VAE_URLS:-}"
 
 BOOTLOG="${DATA_DIR}/logs/bootstrap.log"
-mkdir -p "${DATA_DIR}/logs"
+mkdir -p "${DATA_DIR}/logs" "${DATA_DIR}/extensions"
 echo "[BOOT] $(date -Is) starting bootstrap" > "$BOOTLOG"
 
 # ---------- helpers ----------
 normalize_git_url() {
-  # ensure https://... and .git suffix
   local u="$1"
   [[ -z "$u" ]] && { echo ""; return; }
-  if [[ "$u" =~ ^git@ || "$u" =~ ^ssh:// ]]; then
-    echo "$u"
-    return
-  fi
+  if [[ "$u" =~ ^git@ || "$u" =~ ^ssh:// ]]; then echo "$u"; return; fi
   [[ "$u" != https://* ]] && u="https://$u"
   [[ "$u" != *.git ]] && u="${u%/}.git"
   echo "$u"
@@ -29,7 +25,6 @@ normalize_git_url() {
 
 clone_or_update() {
   local url="$1"; local dest="$2"; local name="$3"
-  # 20s connect timeout, 600s overall, shallow
   if [ -d "${dest}/.git" ]; then
     echo "[Ext] Updating ${name}" | tee -a "$BOOTLOG"
     (git -C "${dest}" fetch --depth=1 origin || true)
@@ -43,7 +38,6 @@ clone_or_update() {
 }
 
 dl_into() {
-  # $1=url  $2=dir
   local url="$1" dir="$2"
   [ -z "$url" ] && return 0
   mkdir -p "$dir"
@@ -52,7 +46,6 @@ dl_into() {
     echo "[Model] Exists: $(basename "$fname")" | tee -a "$BOOTLOG"
   else
     echo "[Model] Downloading: $url" | tee -a "$BOOTLOG"
-    # 30s connect timeout, resume supported via curl --continue-at -
     if command -v curl >/dev/null 2>&1; then
       curl -L --fail --retry 3 --retry-delay 3 --connect-timeout 30 --continue-at - -o "$fname" "$url" \
         || { echo "[Model][WARN] curl failed: $url" | tee -a "$BOOTLOG"; rm -f "$fname"; }
@@ -63,15 +56,9 @@ dl_into() {
   fi
 }
 
-# ---------- ensure extensions dir symlinked to persistent ----------
-mkdir -p "${DATA_DIR}/extensions"
-rm -rf "${WEBUI_DIR}/extensions" 2>/dev/null || true
-ln -s "${DATA_DIR}/extensions" "${WEBUI_DIR}/extensions"
-
-# ---------- process extensions (fast, before starting servers) ----------
+# ---------- install/update extensions into persistent dir ----------
 if [ -n "$EXTENSIONS" ]; then
   echo "[Ext] Processing EXTENSIONS..." | tee -a "$BOOTLOG"
-  # split on whitespace; normalize each to https://... .git
   for raw in $EXTENSIONS; do
     url="$(normalize_git_url "$raw")"
     [ -z "$url" ] && continue
@@ -83,7 +70,7 @@ else
   echo "[Ext] No EXTENSIONS specified; skipping." | tee -a "$BOOTLOG"
 fi
 
-# ---------- kick off model downloads in background (do not block ports) ----------
+# ---------- start model downloads in background (don't block ports) ----------
 (
   echo "[Model] Background downloads starting..." | tee -a "$BOOTLOG"
   for u in $MODEL_URLS; do dl_into "$u" "${DATA_DIR}/models/Stable-diffusion"; done
@@ -92,5 +79,5 @@ fi
   echo "[Model] Background downloads finished." | tee -a "$BOOTLOG"
 ) & disown
 
-# ---------- hand off to main startup (starts Jupyter + A1111) ----------
+# ---------- hand off to main startup (this will create the symlink safely) ----------
 exec /opt/start.sh
