@@ -21,10 +21,10 @@ ghcr.io/ejscott1/a1111-jupyter-plus:latest
   ```
 
 ➡️ After launch:  
-1. **HTTP 8888** → JupyterLab (opens directly).  
-2. **HTTP 7860** → A1111 WebUI (with `--xformers`).  
-3. Extensions appear under **Extensions → Installed**.  
-4. Models are ready in `/workspace/a1111-data/models/Stable-diffusion/`.
+- **HTTP 8888** → JupyterLab (opens directly).  
+- **HTTP 7860** → A1111 WebUI (`--xformers` enabled).  
+- Preinstalled extensions appear under **Extensions → Installed**.  
+- Models are ready in `/workspace/a1111-data/models/Stable-diffusion/`.
 
 ## 📂 Paths
 - **Checkpoints:** `/workspace/a1111-data/models/Stable-diffusion/`  
@@ -35,12 +35,12 @@ ghcr.io/ejscott1/a1111-jupyter-plus:latest
 - **Configs (SD 1.5):** `/workspace/a1111-data/configs/v1-inference.yaml`
 
 ## 📝 Notes
-- CUDA 12.1 base with Torch + xFormers (cu121 wheels).  
+- CUDA 12.1 with Torch + xFormers (cu121 wheels).  
 - Auto symlink repair ensures all A1111 paths point to persistent storage.  
 - SD 1.5 YAML auto-downloaded on first run; SDXL needs no YAML.  
 - Extensions/models install is idempotent — existing files are reused.
 
 ## 👩‍💻 Developer Notes
-- `EXTENSIONS`, `MODEL_URLS`, `LORA_URLS`, and `VAE_URLS` control what is installed at startup.  
-- You can override these at runtime without rebuilding the image.  
-- To keep the image lean, models/extensions are not baked in — they download/update at pod startup.
+- Change `EXTENSIONS` to add/remove GitHub extension repos.  
+- Add `MODEL_URLS`, `LORA_URLS`, `VAE_URLS` to auto-download other models.  
+- Extensions and models are downloaded/updated at pod startup (not baked in).
